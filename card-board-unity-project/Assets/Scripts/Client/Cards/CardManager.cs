@@ -65,6 +65,8 @@ public class CardManager : MonoBehaviour {
 
         Card card = Array.Find(cards.ToArray(), ctx => ctx.ID == cardID);
         card.Config(cardData);
+
+        transform.SetSiblingIndex(transform.parent.childCount - 1);
     }
 
     public void Clear () {

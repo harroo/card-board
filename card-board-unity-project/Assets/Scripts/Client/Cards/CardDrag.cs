@@ -34,6 +34,8 @@ public class CardDrag : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
 
             transform.position -= posCache - Input.mousePosition;
             posCache = Input.mousePosition;
+
+            transform.SetSiblingIndex(transform.parent.childCount - 1);
         }
 
         if (Input.GetMouseButtonUp(0))
