@@ -32,12 +32,22 @@ public class MainServer : MonoBehaviour {
 
     private void Update () {
 
-        ClientLoop.Tick();
+        try {
+
+            ClientLoop.Tick();
+
+        } catch (Exception ex) {
+
+            Console.Log(LogType.WARN, "ClientLoop.Tick(): Caused System.Exception!");
+            Console.Log(LogType.ERROR, ex.Message);
+        }
     }
 
     private void OnDestroy () {
 
         clientCatchThread.Abort();
+
+        ClientLoop.Decache();
     }
 
     private void ClientCatchLoop (TcpListener listener) {

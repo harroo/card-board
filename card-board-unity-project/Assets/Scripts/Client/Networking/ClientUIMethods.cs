@@ -4,6 +4,9 @@ using UnityEngine.UI;
 
 public class ClientUIMethods : MonoBehaviour {
 
+    public static ClientUIMethods instance;
+    private void Awake () { instance = this; }
+
     public Text connectionStatus;
 
     public void Connect (InputField field) {
@@ -19,6 +22,27 @@ public class ClientUIMethods : MonoBehaviour {
 
         MainClient.DisconnectFromServer();
 
-        if (!MainClient.connected) connectionStatus.text = "<color=green>Not connected.</color>";
+        if (!MainClient.connected) connectionStatus.text = "<color=white>Not connected.</color>";
+
+        Cleanup();
+    }
+
+    public void CreateNewCard () {
+
+        MainClient.SendCardCreate(Random.Range(111111111, 999999999));
+    }
+
+    public void Cleanup () {
+
+        CardManager.instance.Clear();
+    }
+
+    private void Update () {
+
+        MainClient.Tick();
+    }
+    private void OnDestroy () {
+
+        Disconnect();
     }
 }

@@ -11,6 +11,7 @@ public class CardManager : MonoBehaviour {
     private void Awake () { instance = this; }
 
     public GameObject prefab;
+    public Transform parent;
 
     public void LoadData (byte[] data) {
 
@@ -32,7 +33,41 @@ public class CardManager : MonoBehaviour {
     public void LoadCard (byte[] buf) {
 
         Card card = Instantiate(prefab, Vector3.zero, Quaternion.identity).GetComponent<Card>();
+        card.transform.SetParent(parent);
+        card.transform.localScale = new Vector3(1,1,1);
+        card.transform.position = Vector3.zero;
         card.Config(buf);
         cards.Add(card);
+    }
+
+    public void CreateCard (int cardID) {
+
+        Card card = Instantiate(prefab, Vector3.zero, Quaternion.identity).GetComponent<Card>();
+        card.transform.SetParent(parent);
+        card.transform.localScale = new Vector3(1,1,1);
+        card.transform.position = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
+        card.ID = cardID;
+        cards.Add(card);
+    }
+
+    public void DeleteCard (int cardID) {
+
+        Card card = Array.Find(cards.ToArray(), ctx => ctx.ID == cardID);
+        Destroy(card.gameObject);
+        cards.Remove(card);
+    }
+
+    public void UpdateCard (int cardID, byte[] cardData) {
+
+        Card card = Array.Find(cards.ToArray(), ctx => ctx.ID == cardID);
+        card.Config(cardData);
+    }
+
+    public void Clear () {
+
+        foreach (var card in cards)
+            Destroy(card.gameObject);
+
+        cards.Clear();
     }
 }

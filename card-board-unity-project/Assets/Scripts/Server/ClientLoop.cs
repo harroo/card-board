@@ -24,8 +24,15 @@ public static class ClientLoop {
 
             while (newClientQueue.Count != 0) {
 
-                clients.Add(newClientQueue[0]);
+                TcpClient newClient = newClientQueue[0];
                 newClientQueue.RemoveAt(0);
+
+                clients.Add(newClient);
+
+                //send card data
+                byte[] cardData = ServerCards.GetSave();
+                newClient.GetStream().Write(BitConverter.GetBytes(cardData.Length), 0, 4);
+                if (cardData.Length != 0) newClient.GetStream().Write(cardData, 0, cardData.Length);
             }
 
         } finally { mutex.ReleaseMutex(); }
@@ -35,26 +42,35 @@ public static class ClientLoop {
 
     private static List<TcpClient> clientsToDisconnect = new List<TcpClient>();
 
-    private static List<byte[]> sendQueue = new List<byte[]>();
+    private static List<SendNode> sendQueue = new List<SendNode>();
+
+    public static void Decache () {
+
+        clients.Clear();
+        clientsToDisconnect.Clear();
+        sendQueue.Clear();
+    }
 
     public static void Tick () {
+
+        PopCheckNewClients();
 
         foreach (var client in clients) {
 
             if (client.Available > 0) { //if data to recv
 
                 //recv packet size
-                byte[] psizebuf = new byte[2];
-                client.GetStream().Read(psizebuf, 0, 2);
-                ushort psize = BitConverter.ToUInt16(psizebuf, 0);
+                byte[] psizebuf = new byte[4];
+                client.GetStream().Read(psizebuf, 0, 4);
+                int psize = BitConverter.ToInt32(psizebuf, 0);
 
                 //recv packet
                 byte[] pbuf = new byte[psize];
                 client.GetStream().Read(pbuf, 0, psize);
 
                 //process the packet
-                byte[] rdata = Process(client, pbuf);
-                if (rdata.Length != 0) sendQueue.Add(rdata);
+                SendNode rdata = Process(client, pbuf);
+                if (rdata != null) sendQueue.Add(rdata);
             }
         }
 
@@ -88,11 +104,13 @@ public static class ClientLoop {
         //send msg if needed
         if (sendQueue.Count != 0) {
 
-            foreach (var sbuf in sendQueue) {
+            foreach (var sn in sendQueue) {
 
                 foreach (var client in clients) {
 
-                    client.GetStream().Write(sbuf, 0, sbuf.Length);
+                    if (client == sn.clientToIgnore) continue;
+
+                    client.GetStream().Write(sn.buffer, 0, sn.buffer.Length);
                 }
             }
             sendQueue.Clear();
@@ -106,7 +124,7 @@ public static class ClientLoop {
         if (data.Length != 0) stream.Write(data, 0, data.Length);
     }
 
-    private static byte[] Process (TcpClient client, byte[] packet) {
+    private static SendNode Process (TcpClient client, byte[] packet) {
 
         switch (packet[0]) {
 
@@ -116,17 +134,17 @@ public static class ClientLoop {
                 int cardID = BitConverter.ToInt32(packet, 1);
 
                 //make buffer create res packet
-                byte[] rbuf = new byte[7];
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)(1)), 0, rbuf, 0, 2);
-                rbuf[2] = 0;
-                Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 0, 4);
+                byte[] rbuf = new byte[9];
+                Buffer.BlockCopy(BitConverter.GetBytes(5), 0, rbuf, 0, 4);
+                rbuf[4] = 0;
+                Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
 
                 //card manmager create
 
                 Console.Log(client.Client.RemoteEndPoint.ToString() + ": Created Card: " + cardID.ToString());
 
                 //return it
-                return rbuf;
+                return new SendNode(rbuf);
             }
 
             case 1: { //delete card
@@ -135,20 +153,63 @@ public static class ClientLoop {
                 int cardID = BitConverter.ToInt32(packet, 1);
 
                 //make buffer delete res packet
-                byte[] rbuf = new byte[7];
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)(1)), 0, rbuf, 0, 2);
-                rbuf[2] = 1;
-                Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 0, 4);
+                byte[] rbuf = new byte[9];
+                Buffer.BlockCopy(BitConverter.GetBytes(5), 0, rbuf, 0, 4);
+                rbuf[4] = 1;
+                Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
 
                 //card manmager delete
 
                 Console.Log(client.Client.RemoteEndPoint.ToString() + ": Deleted Card: " + cardID.ToString());
 
                 //return it
-                return rbuf;
+                return new SendNode(rbuf);
             }
+
+            case 2: { //update card
+
+                //read card id
+                int cardID = BitConverter.ToInt32(packet, 1);
+
+                //read card buffer data
+                byte[] cardBuf = new byte[packet.Length - 5];
+                Buffer.BlockCopy(packet, 5, cardBuf, 0, cardBuf.Length);
+
+                //make buffer update packet
+                byte[] rbuf = new byte[9 + cardBuf.Length];
+                Buffer.BlockCopy(BitConverter.GetBytes(5 + cardBuf.Length), 0, rbuf, 0, 4);
+                rbuf[4] = 2;
+                Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
+                Buffer.BlockCopy(cardBuf, 0, rbuf, 9, cardBuf.Length);
+
+                //card manmager update
+
+                // Console.Log(client.Client.RemoteEndPoint.ToString() + ": Updated Card: " + cardID.ToString());
+
+                //return it
+                return new SendNode(rbuf, client);
+            }
+
+            case 3: { //disconnect
+
+                //log
+                Console.Log(client.Client.RemoteEndPoint.ToString() + ": Disconnected");
+
+                //disconect em
+                clientsToDisconnect.Add(client);
+
+            break; }
         }
 
-        return new byte[0];
+        return null;
     }
+}
+
+public class SendNode {
+
+    public byte[] buffer;
+    public TcpClient clientToIgnore;
+
+    public SendNode (byte[] a) { buffer = a; }
+    public SendNode (byte[] a, TcpClient b) { buffer = a; clientToIgnore = b; }
 }

@@ -28,10 +28,13 @@ public static class MainClient {
             stream.Read(sizeBuf, 0, 4);
             int size = BitConverter.ToInt32(sizeBuf, 0);
 
-            byte[] packetBuf = new byte[size];
-            stream.Read(packetBuf, 0, size);
+            if (size != 0) {
 
-            CardManager.instance.LoadData(packetBuf);
+                byte[] packetBuf = new byte[size];
+                stream.Read(packetBuf, 0, size);
+
+                CardManager.instance.LoadData(packetBuf);
+            }
 
             connected = true;
 
@@ -48,7 +51,7 @@ public static class MainClient {
         try {
 
             //send disconnect
-            Send((byte)5, new byte[0]);
+            Send((byte)3, new byte[0]);
 
         } catch {}
         try {
@@ -61,12 +64,126 @@ public static class MainClient {
         connected = false;
     }
 
+    public static void CrashFromServer () {
+
+        DisconnectFromServer();
+
+        ClientUIMethods.instance.connectionStatus.text = "<color=orange>Disconnected.</color>";
+        ClientUIMethods.instance.Cleanup();
+    }
+
+    public static void Tick () {
+
+        // try {
+
+            if (!connected) return;
+
+            if (client.Available > 0) {
+
+                //recv packet size
+                byte[] psizebuf = new byte[4];
+                client.GetStream().Read(psizebuf, 0, 4);
+                int psize = BitConverter.ToInt32(psizebuf, 0);
+
+                //recv packet
+                byte[] pbuf = new byte[psize];
+                stream.Read(pbuf, 0, psize);
+
+                //process the packet
+                Process(pbuf);
+            }
+
+        // } catch (Exception ex) {
+        //
+        //     UnityEngine.Debug.LogError(ex.Message);
+        //
+        //     CrashFromServer();
+        // }
+    }
+
+    public static void Process (byte[] packet) {
+
+        UnityEngine.Debug.Log("PROCESSS!!");
+
+        switch (packet[0]) {
+
+            case 0: { //create card
+
+                //read card id
+                int cardID = BitConverter.ToInt32(packet, 1);
+
+                CardManager.instance.CreateCard(cardID);
+
+            break; }
+
+            case 1: { //delete card
+
+                //read card id
+                int cardID = BitConverter.ToInt32(packet, 1);
+
+                CardManager.instance.DeleteCard(cardID);
+
+            break; }
+
+            case 2: { //update card
+
+                //read card id
+                int cardID = BitConverter.ToInt32(packet, 1);
+
+                //read card buffer data
+                byte[] cardBuf = new byte[packet.Length - 5];
+                Buffer.BlockCopy(packet, 5, cardBuf, 0, cardBuf.Length);
+
+                CardManager.instance.UpdateCard(cardID, cardBuf);
+
+            break; }
+        }
+    }
+
     public static void Send (byte pid, byte[] data) {
 
-        if (!connected) return;
+        try {
 
-        stream.Write(BitConverter.GetBytes(data.Length + 1), 0, 2);
-        stream.Write(new byte[1]{pid}, 0, 1);
-        if (data.Length != 0) stream.Write(data, 0, data.Length);
+            if (!connected) return;
+
+            stream.Write(BitConverter.GetBytes(data.Length + 1), 0, 4);
+            stream.Write(new byte[1]{pid}, 0, 1);
+            if (data.Length != 0) stream.Write(data, 0, data.Length);
+
+        } catch (Exception ex) {
+
+            UnityEngine.Debug.LogError(ex.Message);
+
+            CrashFromServer();
+        }
+    }
+
+    public static void SendCardUpdate (int cardID, byte[] cardData) {
+
+        try {
+
+            if (!connected) return;
+
+            stream.Write(BitConverter.GetBytes(cardData.Length + 5), 0, 4);
+            stream.Write(new byte[1]{2}, 0, 1);
+            stream.Write(BitConverter.GetBytes(cardID), 0, 4);
+            stream.Write(cardData, 0, cardData.Length);
+
+        } catch (Exception ex) {
+
+            UnityEngine.Debug.LogError(ex.Message);
+
+            CrashFromServer();
+        }
+    }
+
+    public static void SendCardCreate (int cardID) {
+
+        Send(0, BitConverter.GetBytes(cardID));
+    }
+
+    public static void SendCardDelete (int cardID) {
+
+        Send(1, BitConverter.GetBytes(cardID));
     }
 }

@@ -53,7 +53,7 @@ public class Console : MonoBehaviour {
 
             case LogType.NULL:  type = "[        ]"; break;
             case LogType.OK:    type = "[   <color=green>OK</color>   ]"; break;
-            case LogType.ERROR: type = "[ <color=red>ERROR</color>  ]"; break;
+            case LogType.ERROR: type = "[  <color=red>ERROR</color> ]"; break;
             case LogType.WARN:  type = "[  <color=orange>WARN</color>  ]"; break;
         }
 
