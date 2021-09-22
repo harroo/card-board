@@ -74,7 +74,7 @@ public static class MainClient {
 
     public static void Tick () {
 
-        try {
+        // try {
 
             if (!connected) return;
 
@@ -93,12 +93,12 @@ public static class MainClient {
                 Process(pbuf);
             }
 
-        } catch (Exception ex) {
-
-            UnityEngine.Debug.LogError(ex.Message);
-
-            CrashFromServer();
-        }
+        // } catch (Exception ex) {
+        //
+        //     UnityEngine.Debug.LogError(ex.Message);
+        //
+        //     CrashFromServer();
+        // }
     }
 
     public static void Process (byte[] packet) {
@@ -133,6 +133,17 @@ public static class MainClient {
                 Buffer.BlockCopy(packet, 5, cardBuf, 0, cardBuf.Length);
 
                 CardManager.instance.UpdateCard(cardID, cardBuf);
+
+            break; }
+
+            case 3: { //msg
+
+                //read msg buffer data
+                byte[] msgBuf = new byte[packet.Length - 1];
+                Buffer.BlockCopy(packet, 1, msgBuf, 0, msgBuf.Length);
+                string msg = System.Text.Encoding.ASCII.GetString(msgBuf);
+
+                Chat.instance.AddMessage(msg);
 
             break; }
         }
@@ -183,5 +194,25 @@ public static class MainClient {
     public static void SendCardDelete (int cardID) {
 
         Send(1, BitConverter.GetBytes(cardID));
+    }
+
+    public static void SendChatMessage (string msg) {
+
+        try {
+
+            if (!connected) return;
+
+            byte[] msgBuf = System.Text.Encoding.ASCII.GetBytes(msg);
+
+            stream.Write(BitConverter.GetBytes(msgBuf.Length + 1), 0, 4);
+            stream.Write(new byte[1]{4}, 0, 1);
+            stream.Write(msgBuf, 0, msgBuf.Length);
+
+        } catch (Exception ex) {
+
+            UnityEngine.Debug.LogError(ex.Message);
+
+            CrashFromServer();
+        }
     }
 }

@@ -46,6 +46,8 @@ public static class ClientLoop {
 
     public static void Decache () {
 
+        ServerCards.Save();
+
         clients.Clear();
         clientsToDisconnect.Clear();
         sendQueue.Clear();
@@ -99,6 +101,8 @@ public static class ClientLoop {
 
                 Console.Log("Zero clients online, cache cleared.");
             }
+
+            ServerCards.Save();
         }
 
         //send msg if needed
@@ -199,6 +203,25 @@ public static class ClientLoop {
                 clientsToDisconnect.Add(client);
 
             break; }
+
+            case 4: { //chat message
+
+                byte[] msgBuf = new byte[packet.Length - 1];
+                Buffer.BlockCopy(packet, 1, msgBuf, 0, msgBuf.Length);
+                string msg = System.Text.Encoding.ASCII.GetString(msgBuf);
+
+                //log
+                Console.Log(client.Client.RemoteEndPoint.ToString() + ": Sent: <color=white>'" + msg + "'</color>");
+
+                //make return packet
+                byte[] rbuf = new byte[5 + msgBuf.Length];
+                Buffer.BlockCopy(BitConverter.GetBytes(1 + msgBuf.Length), 0, rbuf, 0, 4);
+                rbuf[4] = 3;
+                Buffer.BlockCopy(msgBuf, 0, rbuf, 5, msgBuf.Length);
+
+                //return it
+                return new SendNode(rbuf);
+            }
         }
 
         return null;

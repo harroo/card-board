@@ -12,6 +12,10 @@ public class MainServer : MonoBehaviour {
 
     private void Start () {
 
+        Console.Log("Loading save file...");
+
+        ServerCards.Load();
+
         Console.Log("Starting server...");
 
         try {
@@ -45,9 +49,9 @@ public class MainServer : MonoBehaviour {
 
     private void OnDestroy () {
 
-        clientCatchThread.Abort();
-
         ClientLoop.Decache();
+
+        clientCatchThread.Abort();
     }
 
     private void ClientCatchLoop (TcpListener listener) {

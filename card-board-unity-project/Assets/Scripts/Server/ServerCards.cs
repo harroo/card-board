@@ -34,7 +34,7 @@ public static class ServerCards {
 
             binaryFormatter.Serialize(memoryStream, cardBuffers);
 
-            File.WriteAllBytes("s.bin", memoryStream.ToArray());
+            File.WriteAllBytes(".s.bin", memoryStream.ToArray());
 
             Console.Log(LogType.OK, "Saved! Size: " + memoryStream.ToArray().Length.ToString());
 
@@ -49,13 +49,16 @@ public static class ServerCards {
 
         try {
 
-            if (!File.Exists("s.bin")) {
+            if (!File.Exists(".s.bin")) {
 
                 cardBuffers = new Dictionary<int, byte[]>();
+
+                Console.Log("No save file found, new one has been started.");
+
                 return;
             }
 
-            byte[] data = File.ReadAllBytes("s.bin");
+            byte[] data = File.ReadAllBytes(".s.bin");
 
             BinaryFormatter binaryFormatter = new BinaryFormatter();
             MemoryStream memoryStream = new MemoryStream();
@@ -96,6 +99,6 @@ public static class ServerCards {
 
         cardBuffers[cardID] = data;
 
-        Save();
+        // Save();
     }
 }
