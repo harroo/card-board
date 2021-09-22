@@ -139,7 +139,7 @@ public static class ClientLoop {
                 rbuf[4] = 0;
                 Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
 
-                //card manmager create
+                ServerCards.CreateNewCard(cardID);
 
                 Console.Log(client.Client.RemoteEndPoint.ToString() + ": Created Card: " + cardID.ToString());
 
@@ -158,7 +158,7 @@ public static class ClientLoop {
                 rbuf[4] = 1;
                 Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
 
-                //card manmager delete
+                ServerCards.DeleteCard(cardID);
 
                 Console.Log(client.Client.RemoteEndPoint.ToString() + ": Deleted Card: " + cardID.ToString());
 
@@ -182,7 +182,7 @@ public static class ClientLoop {
                 Buffer.BlockCopy(BitConverter.GetBytes(cardID), 0, rbuf, 5, 4);
                 Buffer.BlockCopy(cardBuf, 0, rbuf, 9, cardBuf.Length);
 
-                //card manmager update
+                ServerCards.UpdateCard(cardID, cardBuf);
 
                 // Console.Log(client.Client.RemoteEndPoint.ToString() + ": Updated Card: " + cardID.ToString());
 

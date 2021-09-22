@@ -74,7 +74,7 @@ public static class MainClient {
 
     public static void Tick () {
 
-        // try {
+        try {
 
             if (!connected) return;
 
@@ -93,17 +93,15 @@ public static class MainClient {
                 Process(pbuf);
             }
 
-        // } catch (Exception ex) {
-        //
-        //     UnityEngine.Debug.LogError(ex.Message);
-        //
-        //     CrashFromServer();
-        // }
+        } catch (Exception ex) {
+
+            UnityEngine.Debug.LogError(ex.Message);
+
+            CrashFromServer();
+        }
     }
 
     public static void Process (byte[] packet) {
-
-        UnityEngine.Debug.Log("PROCESSS!!");
 
         switch (packet[0]) {
 

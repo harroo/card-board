@@ -15,6 +15,8 @@ public class CardManager : MonoBehaviour {
 
     public void LoadData (byte[] data) {
 
+        Debug.Log("Loading from received buffer: " + data.Length);
+
         int index = 0;
 
         while (index < data.Length) {
@@ -25,6 +27,8 @@ public class CardManager : MonoBehaviour {
             byte[] buf = new byte[size];
             Buffer.BlockCopy(data, index, buf, 0, size);
             index += size;
+
+            LoadCard(buf);
         }
     }
 
@@ -45,7 +49,7 @@ public class CardManager : MonoBehaviour {
         Card card = Instantiate(prefab, Vector3.zero, Quaternion.identity).GetComponent<Card>();
         card.transform.SetParent(parent);
         card.transform.localScale = new Vector3(1,1,1);
-        card.transform.position = Camera.main.ViewportToWorldPoint(new Vector2(0.5f, 0.5f));
+        card.transform.position = Input.mousePosition;
         card.ID = cardID;
         cards.Add(card);
     }
