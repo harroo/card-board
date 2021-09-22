@@ -29,6 +29,8 @@ public static class ClientLoop {
 
                 clients.Add(newClient);
 
+                ChatSend("<color=green>User joined!</color>");
+
                 //send card data
                 byte[] cardData = ServerCards.GetSave();
                 newClient.GetStream().Write(BitConverter.GetBytes(cardData.Length), 0, 4);
@@ -83,6 +85,8 @@ public static class ClientLoop {
 
                 clients.Remove(client);
 
+                ChatSend("<color=orange>User left.</color>");
+
                 try {
 
                     client.Close();
@@ -126,6 +130,18 @@ public static class ClientLoop {
         stream.Write(BitConverter.GetBytes(data.Length + 1), 0, 2);
         stream.Write(new byte[1]{pid}, 0, 1);
         if (data.Length != 0) stream.Write(data, 0, data.Length);
+    }
+
+    public static void ChatSend (string msg) {
+
+        byte[] msgBuf = System.Text.Encoding.ASCII.GetBytes(msg);
+
+        byte[] rbuf = new byte[5 + msgBuf.Length];
+        Buffer.BlockCopy(BitConverter.GetBytes(1 + msgBuf.Length), 0, rbuf, 0, 4);
+        rbuf[4] = 3;
+        Buffer.BlockCopy(msgBuf, 0, rbuf, 5, msgBuf.Length);
+
+        sendQueue.Add(new SendNode(rbuf));
     }
 
     private static SendNode Process (TcpClient client, byte[] packet) {

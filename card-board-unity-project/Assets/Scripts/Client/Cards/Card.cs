@@ -52,10 +52,7 @@ public class Card : MonoBehaviour {
 
         minimized = buf[titleSize + fieldSize + 20] == 1;
 
-        titleCache = title.text;
-        contentCache = field.text;
-        posCache = transform.position;
-        minCache = minimized;
+        AnchorCache();
     }
 
     public byte[] GetData () {
@@ -104,13 +101,18 @@ public class Card : MonoBehaviour {
 
                 MainClient.SendCardUpdate(ID, GetData());
 
-                contentCache = field.text;
-                titleCache = title.text;
-                posCache = transform.position;
-                minCache = minimized;
+                AnchorCache();
             }
 
         } else timer -= Time.deltaTime;
+    }
+
+    public void AnchorCache () {
+
+        contentCache = field.text;
+        titleCache = title.text;
+        posCache = transform.position;
+        minCache = minimized;
     }
 
     public void DeleteThisCard () {
