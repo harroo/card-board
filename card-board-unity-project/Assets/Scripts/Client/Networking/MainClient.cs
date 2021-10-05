@@ -189,11 +189,15 @@ public static class MainClient {
     public static void SendCardCreate (int cardID) {
 
         Send(0, BitConverter.GetBytes(cardID));
+
+        Chat.Send("Created a Card.");
     }
 
     public static void SendCardDelete (int cardID) {
 
         Send(1, BitConverter.GetBytes(cardID));
+
+        Chat.Send("Deleted a Card.");
     }
 
     public static void SendChatMessage (string msg) {
