@@ -97,4 +97,9 @@ public class Chat : MonoBehaviour {
             return "[<color=#00A9A5ff>" + System.Environment.UserName + "</color>@<color=#00A9A5ff>" + System.Environment.MachineName + "</color>]";
         }
     }
+
+    public static void Send (string msg) {
+
+        MainClient.SendChatMessage(instance.username + " " + msg);
+    }
 }
